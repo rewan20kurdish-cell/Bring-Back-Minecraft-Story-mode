@@ -145,7 +145,7 @@
     .vote-button:hover:not(:disabled) {
       border-color: #ffff55;
       color: #ffff55;
-      background: rgba(255, 255, 85, 0.05);
+      background: rgba(255, 255, 255, 0.05);
       box-shadow: 0 0 40px rgba(255, 255, 85, 0.1);
     }
 
@@ -379,9 +379,8 @@
     const voteBtn = document.getElementById('voteBtn');
     const voteStatus = document.getElementById('voteStatus');
 
-    // CLEAR OLD CACHE - Start fresh!
-    localStorage.removeItem('mcsm_vote_cache');
-    localStorage.removeItem('mcsm_user_voted');
+    // FIXED: Removed the localStorage.clear() that was letting people vote again after reload
+    // The voted flag now PERSISTS across page reloads
 
     function hasUserVoted() {
       try {
