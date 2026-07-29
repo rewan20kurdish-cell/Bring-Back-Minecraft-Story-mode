@@ -359,13 +359,14 @@
 
   <script>
     // ============================================================
-    // WORKING VOTE SYSTEM - Using Abacus API
-    // Source: https://abacus.jasoncameron.dev/
-    // CORS Enabled, No Authentication Required, Free
+    // WORKING VOTE SYSTEM - Using tick.rs
+    // tick.rs is a simple, free, open-source counting service
+    // No sign-up, no API keys, just works
+    // Source: https://github.com/keithamus/tickrs
     // ============================================================
     
-    const ABACUS_API = 'https://abacus.jasoncameron.dev';
-    const COUNTER_NAME = 'mcsm_supporters';
+    const TICKRS_API = 'https://tick.rs';
+    const COUNTER_ID = 'mcsm_supporters';
     
     const VOTED_KEY = 'mcsm_user_voted';
     const VOTE_CACHE_KEY = 'mcsm_vote_cache';
@@ -393,10 +394,10 @@
       } catch {}
     }
 
-    // Get current vote count
+    // Get current vote count from tick.rs
     async function getVotes() {
       try {
-        const response = await fetch(`${ABACUS_API}/count/${COUNTER_NAME}`);
+        const response = await fetch(`${TICKRS_API}/get/${COUNTER_ID}`);
         if (response.ok) {
           const data = await response.json();
           return data.count || 0;
@@ -408,11 +409,10 @@
       }
     }
 
-    // Increment vote count
+    // Increment vote count using tick.rs
     async function incrementVote() {
       try {
-        // Abacus uses GET for tracking
-        const response = await fetch(`${ABACUS_API}/track/${COUNTER_NAME}`);
+        const response = await fetch(`${TICKRS_API}/inc/${COUNTER_ID}`);
         if (response.ok) {
           const data = await response.json();
           return data.count || 0;
@@ -546,7 +546,7 @@
     });
 
     console.log('MCSM Campaign Active');
-    console.log('Using Abacus API for vote storage');
+    console.log('Using tick.rs for vote storage');
     console.log('Votes are saved in the cloud for everyone to see');
   </script>
 </body>
