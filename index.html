@@ -256,58 +256,21 @@
     }
 
     @media (max-width: 768px) {
-      .hero-image {
-        height: 220px;
-      }
-
-      .vote-section h2 {
-        font-size: 0.9rem;
-      }
-
-      .vote-number {
-        font-size: 2.5rem;
-      }
-
-      .vote-button {
-        font-size: 0.8rem;
-        padding: 16px 20px;
-      }
-
-      .gallery {
-        grid-template-columns: 1fr;
-      }
-
-      .mcsm-header .title {
-        font-size: 0.7rem;
-      }
-
-      .mcsm-header .votes {
-        font-size: 0.55rem;
-        padding: 5px 10px;
-      }
-
-      .info-box p {
-        font-size: 0.9rem;
-      }
+      .hero-image { height: 220px; }
+      .vote-section h2 { font-size: 0.9rem; }
+      .vote-number { font-size: 2.5rem; }
+      .vote-button { font-size: 0.8rem; padding: 16px 20px; }
+      .gallery { grid-template-columns: 1fr; }
+      .mcsm-header .title { font-size: 0.7rem; }
+      .mcsm-header .votes { font-size: 0.55rem; padding: 5px 10px; }
+      .info-box p { font-size: 0.9rem; }
     }
 
     @media (max-width: 480px) {
-      .hero-image {
-        height: 160px;
-      }
-
-      .vote-number {
-        font-size: 1.8rem;
-      }
-
-      .vote-button {
-        font-size: 0.65rem;
-        padding: 14px 15px;
-      }
-
-      .info-box p {
-        font-size: 0.8rem;
-      }
+      .hero-image { height: 160px; }
+      .vote-number { font-size: 1.8rem; }
+      .vote-button { font-size: 0.65rem; padding: 14px 15px; }
+      .info-box p { font-size: 0.8rem; }
     }
   </style>
 </head>
@@ -376,13 +339,11 @@
              alt="Jesse and friends"
              onerror="this.style.display='none'">
       </div>
-
       <div class="gallery-card">
         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQinAhIX0h4B4tBHUsNN68YO5szKSpZ-70sRHYg-x1Isw&s=10" 
              alt="Reuben and the gang"
              onerror="this.style.display='none'">
       </div>
-
       <div class="gallery-card">
         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQ1kp1oa3AXPLJc1lrMBd7ZfSxpHv-7vfoh393NDZySw&s=10" 
              alt="Jesse in armor"
@@ -397,12 +358,16 @@
   </div>
 
   <script>
-    // --- WORKING VOTE SYSTEM USING COUNTAPI ---
-    // CountAPI is free, open-source, no sign-up required
-    // Source: https://countapi.xyz/
+    // ============================================
+    // WORKING VOTE SYSTEM - CounterAPI.dev
+    // This is the correct, working API
+    // ============================================
     
-    const API_URL = 'https://api.countapi.xyz/update/mcsm_campaign/supporters/?amount=1';
-    const GET_URL = 'https://api.countapi.xyz/get/mcsm_campaign/supporters';
+    // Using CounterAPI.dev - Free, no signup, works forever
+    const COUNTER_API = 'https://api.counterapi.dev/v1';
+    const NAMESPACE = 'mcsm';
+    const COUNTER_NAME = 'supporters';
+    
     const VOTED_KEY = 'mcsm_user_voted';
     
     let currentVotes = 0;
@@ -428,22 +393,64 @@
       } catch {}
     }
 
-    // Load votes from API
-    async function loadVotes() {
+    // Get vote count from CounterAPI
+    async function getVotes() {
       try {
-        const response = await fetch(GET_URL);
+        const response = await fetch(`${COUNTER_API}/${NAMESPACE}/${COUNTER_NAME}`);
         if (response.ok) {
           const data = await response.json();
-          currentVotes = data.value || 14300;
-          updateUI(currentVotes);
-          return;
+          return data.count || 0;
         }
+        return null;
       } catch (e) {
-        console.log('Failed to load votes, retrying...');
+        console.log('Error getting votes:', e);
+        return null;
       }
+    }
 
-      // If fails, try again after 2 seconds
-      setTimeout(loadVotes, 2000);
+    // Increment vote count
+    async function incrementVote() {
+      try {
+        const response = await fetch(`${COUNTER_API}/${NAMESPACE}/${COUNTER_NAME}/up`, {
+          method: 'POST'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          return data.count || 0;
+        }
+        return null;
+      } catch (e) {
+        console.log('Error incrementing vote:', e);
+        return null;
+      }
+    }
+
+    // Load votes from API
+    async function loadVotes() {
+      const count = await getVotes();
+      if (count !== null) {
+        currentVotes = count;
+        updateUI(currentVotes);
+      } else {
+        // Try to create the counter if it doesn't exist
+        try {
+          const createResponse = await fetch(`${COUNTER_API}/${NAMESPACE}/${COUNTER_NAME}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ count: 14300 })
+          });
+          if (createResponse.ok) {
+            currentVotes = 14300;
+            updateUI(currentVotes);
+          } else {
+            voteStatus.textContent = 'Unable to load votes - please refresh';
+            voteStatus.className = 'vote-status error';
+          }
+        } catch (e) {
+          voteStatus.textContent = 'Unable to load votes - please refresh';
+          voteStatus.className = 'vote-status error';
+        }
+      }
     }
 
     // Register vote
@@ -462,46 +469,18 @@
       voteStatus.textContent = 'Recording your support...';
       voteStatus.className = 'vote-status';
 
-      try {
-        // Increment the counter
-        const response = await fetch(API_URL);
+      const newCount = await incrementVote();
+      
+      if (newCount !== null) {
+        currentVotes = newCount;
+        setUserVoted();
+        updateUI(currentVotes);
         
-        if (response.ok) {
-          const data = await response.json();
-          currentVotes = data.value;
-          
-          setUserVoted();
-          updateUI(currentVotes);
-          
-          voteBtn.textContent = 'THE ORDER REMEMBERS';
-          voteBtn.disabled = true;
-          voteStatus.textContent = 'Your support has been recorded';
-          voteStatus.className = 'vote-status success';
-        } else {
-          throw new Error('API returned error');
-        }
-      } catch (e) {
-        console.error('Vote failed:', e);
-        
-        // Try alternative endpoint
-        try {
-          const altResponse = await fetch('https://api.countapi.xyz/hit/mcsm_campaign/supporters');
-          if (altResponse.ok) {
-            const data = await altResponse.json();
-            currentVotes = data.value;
-            setUserVoted();
-            updateUI(currentVotes);
-            voteBtn.textContent = 'THE ORDER REMEMBERS';
-            voteBtn.disabled = true;
-            voteStatus.textContent = 'Your support has been recorded';
-            voteStatus.className = 'vote-status success';
-            isVoting = false;
-            return;
-          }
-        } catch (altError) {
-          console.log('Alternative method also failed');
-        }
-        
+        voteBtn.textContent = 'THE ORDER REMEMBERS';
+        voteBtn.disabled = true;
+        voteStatus.textContent = 'Your support has been recorded';
+        voteStatus.className = 'vote-status success';
+      } else {
         voteBtn.disabled = false;
         voteBtn.textContent = 'BRING BACK STORY MODE';
         voteStatus.textContent = 'Connection issue - please try again';
@@ -527,19 +506,16 @@
       }
     }
 
-    // Auto-refresh votes every 15 seconds
+    // Auto-refresh every 15 seconds
     let refreshInterval;
 
     function startAutoRefresh() {
       refreshInterval = setInterval(async () => {
-        try {
-          const response = await fetch(GET_URL);
-          if (response.ok) {
-            const data = await response.json();
-            currentVotes = data.value;
-            updateUI(currentVotes);
-          }
-        } catch (e) {}
+        const count = await getVotes();
+        if (count !== null && count !== currentVotes) {
+          currentVotes = count;
+          updateUI(currentVotes);
+        }
       }, 15000);
     }
 
@@ -556,7 +532,7 @@
     });
 
     console.log('MCSM Campaign Active');
-    console.log('Using CountAPI for reliable vote storage');
+    console.log('Using CounterAPI.dev for reliable vote storage');
     console.log('Votes are saved in the cloud for everyone to see');
   </script>
 </body>
