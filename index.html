@@ -358,31 +358,20 @@
   </div>
 
   <script>
-    // ============================================
-    // WORKING VOTE SYSTEM - Using Multiple Reliable APIs
-    // ============================================
+    // ============================================================
+    // WORKING VOTE SYSTEM - Using Abacus API
+    // Source: https://abacus.jasoncameron.dev/
+    // CORS Enabled, No Authentication Required, Free
+    // ============================================================
     
-    // API endpoints that are confirmed working
-    const APIS = [
-      {
-        // CounterAPI.dev - Official endpoint
-        get: 'https://api.counterapi.dev/v1/mcsm/supporters',
-        up: 'https://api.counterapi.dev/v1/mcsm/supporters/up',
-        create: 'https://api.counterapi.dev/v1/mcsm/supporters'
-      },
-      {
-        // Alternative endpoint
-        get: 'https://api.counterapi.dev/v1/mcsm_campaign/votes',
-        up: 'https://api.counterapi.dev/v1/mcsm_campaign/votes/up'
-      }
-    ];
+    const ABACUS_API = 'https://abacus.jasoncameron.dev';
+    const COUNTER_NAME = 'mcsm_supporters';
     
     const VOTED_KEY = 'mcsm_user_voted';
     const VOTE_CACHE_KEY = 'mcsm_vote_cache';
     
     let currentVotes = 14300;
     let isVoting = false;
-    let apiIndex = 0;
     
     const voteNumber = document.getElementById('voteNumber');
     const headerVotes = document.getElementById('headerVotes');
@@ -404,96 +393,68 @@
       } catch {}
     }
 
-    // Try to get votes from all APIs
+    // Get current vote count
     async function getVotes() {
-      for (let api of APIS) {
-        try {
-          const response = await fetch(api.get, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' }
-          });
-          if (response.ok) {
-            const data = await response.json();
-            return data.count || data.value || 0;
-          }
-        } catch (e) {
-          console.log('API get failed, trying next...');
-        }
-      }
-      return null;
-    }
-
-    // Try to increment vote using all APIs
-    async function incrementVote() {
-      for (let api of APIS) {
-        if (!api.up) continue;
-        try {
-          const response = await fetch(api.up, {
-            method: 'POST',
-            headers: { 'Accept': 'application/json' }
-          });
-          if (response.ok) {
-            const data = await response.json();
-            return data.count || data.value || 0;
-          }
-        } catch (e) {
-          console.log('API increment failed, trying next...');
-        }
-      }
-      return null;
-    }
-
-    // Create counter if it doesn't exist
-    async function createCounter() {
       try {
-        const response = await fetch(APIS[0].create, {
-          method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({ count: 14300 })
-        });
+        const response = await fetch(`${ABACUS_API}/count/${COUNTER_NAME}`);
         if (response.ok) {
           const data = await response.json();
-          return data.count || 14300;
+          return data.count || 0;
         }
+        return null;
       } catch (e) {
-        console.log('Create counter failed');
+        console.log('Error getting votes:', e);
+        return null;
       }
-      return null;
     }
 
-    // Load votes
+    // Increment vote count
+    async function incrementVote() {
+      try {
+        // Abacus uses GET for tracking
+        const response = await fetch(`${ABACUS_API}/track/${COUNTER_NAME}`);
+        if (response.ok) {
+          const data = await response.json();
+          return data.count || 0;
+        }
+        return null;
+      } catch (e) {
+        console.log('Error incrementing vote:', e);
+        return null;
+      }
+    }
+
+    // Load votes from API
     async function loadVotes() {
-      let count = await getVotes();
-      
-      if (count === null) {
-        // Try to create counter
-        count = await createCounter();
+      try {
+        const count = await getVotes();
+        if (count !== null && count > 0) {
+          currentVotes = count;
+          updateUI(currentVotes);
+          try {
+            localStorage.setItem(VOTE_CACHE_KEY, currentVotes.toString());
+          } catch (e) {}
+          return;
+        }
+      } catch (e) {
+        console.log('Load failed');
       }
-      
-      if (count !== null && count > 0) {
-        currentVotes = count;
-        updateUI(currentVotes);
-        return;
-      }
-      
+
       // Check cache
       try {
         const cached = localStorage.getItem(VOTE_CACHE_KEY);
         if (cached) {
           currentVotes = parseInt(cached);
           updateUI(currentVotes);
+          voteStatus.textContent = 'Using cached votes - API may be slow';
+          voteStatus.className = 'vote-status warning';
           return;
         }
       } catch (e) {}
-      
+
       // Default fallback
       currentVotes = 14300;
       updateUI(currentVotes);
-      voteStatus.textContent = 'Using cached votes - API connection may be limited';
-      voteStatus.className = 'vote-status warning';
     }
 
     // Register vote
@@ -512,45 +473,26 @@
       voteStatus.textContent = 'Recording your support...';
       voteStatus.className = 'vote-status';
 
-      let newCount = await incrementVote();
-      
-      if (newCount !== null && newCount > 0) {
-        currentVotes = newCount;
-        try {
-          localStorage.setItem(VOTE_CACHE_KEY, currentVotes.toString());
-        } catch (e) {}
-        setUserVoted();
-        updateUI(currentVotes);
+      try {
+        const newCount = await incrementVote();
         
-        voteBtn.textContent = 'THE ORDER REMEMBERS';
-        voteBtn.disabled = true;
-        voteStatus.textContent = 'Your support has been recorded';
-        voteStatus.className = 'vote-status success';
-      } else {
-        // Try one more time with a different method
-        try {
-          const response = await fetch('https://api.counterapi.dev/v1/mcsm/supporters', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ count: currentVotes + 1 })
-          });
-          if (response.ok) {
-            const data = await response.json();
-            currentVotes = data.count || currentVotes + 1;
-            try {
-              localStorage.setItem(VOTE_CACHE_KEY, currentVotes.toString());
-            } catch (e) {}
-            setUserVoted();
-            updateUI(currentVotes);
-            voteBtn.textContent = 'THE ORDER REMEMBERS';
-            voteBtn.disabled = true;
-            voteStatus.textContent = 'Your support has been recorded';
-            voteStatus.className = 'vote-status success';
-            isVoting = false;
-            return;
-          }
-        } catch (e) {}
-        
+        if (newCount !== null && newCount > 0) {
+          currentVotes = newCount;
+          try {
+            localStorage.setItem(VOTE_CACHE_KEY, currentVotes.toString());
+          } catch (e) {}
+          setUserVoted();
+          updateUI(currentVotes);
+          
+          voteBtn.textContent = 'THE ORDER REMEMBERS';
+          voteBtn.disabled = true;
+          voteStatus.textContent = 'Your support has been recorded';
+          voteStatus.className = 'vote-status success';
+        } else {
+          throw new Error('Increment failed');
+        }
+      } catch (e) {
+        console.error('Vote error:', e);
         voteBtn.disabled = false;
         voteBtn.textContent = 'BRING BACK STORY MODE';
         voteStatus.textContent = 'Connection issue - please try again';
@@ -576,16 +518,18 @@
       }
     }
 
-    // Auto-refresh
+    // Auto-refresh every 15 seconds
     let refreshInterval;
 
     function startAutoRefresh() {
       refreshInterval = setInterval(async () => {
-        const count = await getVotes();
-        if (count !== null && count > 0 && count !== currentVotes) {
-          currentVotes = count;
-          updateUI(currentVotes);
-        }
+        try {
+          const count = await getVotes();
+          if (count !== null && count > 0 && count !== currentVotes) {
+            currentVotes = count;
+            updateUI(currentVotes);
+          }
+        } catch (e) {}
       }, 15000);
     }
 
@@ -602,7 +546,8 @@
     });
 
     console.log('MCSM Campaign Active');
-    console.log('Using CounterAPI.dev for vote storage');
+    console.log('Using Abacus API for vote storage');
+    console.log('Votes are saved in the cloud for everyone to see');
   </script>
 </body>
 </html>
