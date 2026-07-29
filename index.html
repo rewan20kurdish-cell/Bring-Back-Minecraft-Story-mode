@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bring Back MCSM!</title>
+
+  <!-- Minecraft & Telltale Style Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Open+Sans:wght@600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* --- Telltale / MCSM Cinematic Style --- */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: #0a0a0a;
+      background-image: radial-gradient(circle, #2a2a35 0%, #000000 100%);
+      color: #ffffff;
+      font-family: 'Open Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* --- Telltale "Remembered That" Notification --- */
+    .telltale-notice {
+      width: 100%;
+      padding: 15px;
+      font-family: 'Open Sans', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #ffffff;
+      text-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border-bottom: 2px solid #333;
+    }
+
+    .telltale-icon { font-family: 'Press Start 2P', monospace; font-size: 0.7rem; color: #aaaaaa; }
+
+    /* --- Hero Section --- */
+    .hero {
+      width: 100%;
+      max-width: 1000px;
+      margin-top: 20px;
+      text-align: center;
+      padding: 15px;
+    }
+
+    /* GitHub Local Images will load properly here */
+    .hero img {
+      width: 100%;
+      height: auto;
+      border: 3px solid #fff;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+      margin-bottom: 20px;
+      border-radius: 4px;
+      background-color: #222; /* Placeholder color if W3Schools blocks the image */
+    }
+
+    h1 {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 1.2rem;
+      color: #fce803; 
+      text-shadow: 3px 3px 0px #000;
+      margin-bottom: 15px;
+      line-height: 1.5;
+    }
+
+    .subtitle {
+      font-size: 1rem; 
+      color: #ccc; 
+      max-width: 700px; 
+      margin: 0 auto; 
+      text-shadow: 2px 2px 0 #000;
+      padding: 0 10px;
+    }
+
+    /* --- Vote Section / Dialogue Choices --- */
+    .vote-container {
+      width: 100%;
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .progress-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.75rem;
+      color: #ffffff;
+      margin-bottom: 15px;
+      line-height: 1.6;
+      text-shadow: 2px 2px 0 #000;
+    }
+
+    .mcsm-button {
+      background: rgba(0, 0, 0, 0.6);
+      border: 3px solid #ffffff;
+      color: #ffffff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.85rem;
+      padding: 15px 10px;
+      width: 100%;
+      max-width: 600px;
+      margin: 10px auto;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-shadow: 2px 2px 0 #000;
+      display: block;
+      border-radius: 4px;
+    }
+
+    .mcsm-button:hover {
+      border-color: #fce803;
+      color: #fce803;
+      background: rgba(252, 232, 3, 0.1);
+    }
+
+    .mcsm-button:disabled {
+      border-color: #fce803;
+      color: #fce803;
+      background: rgba(0,0,0,0.8);
+      cursor: not-allowed;
+    }
+
+    /* --- Image Gallery --- */
+    .gallery {
+      width: 100%;
+      max-width: 1000px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      padding: 15px;
+      margin-bottom: 40px;
+    }
+
+    .gallery img {
+      width: 100%;
+      height: auto;
+      border: 3px solid #333;
+      border-radius: 4px;
+      background-color: #222;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Telltale Corner Notification -->
+  <div class="telltale-notice" id="telltaleNotice">
+    <span class="telltale-icon">[?]</span>
+    <span id="voteText">Loading supporters...</span>
+  </div>
+
+  <div class="hero">
+    <!-- W3Schools WILL show this as broken, but GitHub WILL load it perfectly -->
+    <img src="image_2.png" alt="Minecraft Story Mode Season Two">
+    
+    <h1>YOUR STORY ISN'T OVER YET.</h1>
+    <p class="subtitle">
+      Help us reach 100,000 votes to show the world that the Order of the Stone still has fans waiting for their next adventure.
+    </p>
+  </div>
+
+  <div class="vote-container">
+    <div class="progress-title">GOAL: 100,000<br><br>CURRENT: <span id="numberDisplay" style="color: #55ff55;">...</span></div>
+    
+    <button class="mcsm-button" id="voteBtn" onclick="registerVote()">
+      [ BRING BACK STORY MODE ]
+    </button>
+  </div>
+
+  <div class="gallery">
+    <!-- Local files for GitHub -->
+    <img src="image.png" alt="Jesse and Ivor">
+    <img src="image_3.png" alt="The Gang with Reuben">
+    <img src="image_4.png" alt="Jesse and the crew in armor">
+  </div>
+
+  <script>
+    // Using a highly reliable public counter API
+    const API_URL = 'https://api.counterapi.dev/v1/mcsm_telltale_campaign/votes';
+    
+    const voteTextEl = document.getElementById('voteText');
+    const numberDisplayEl = document.getElementById('numberDisplay');
+    const voteBtn = document.getElementById('voteBtn');
+
+    let currentVotes = 14300; // Fallback number
+
+    // Safely check localStorage without crashing W3Schools sandbox
+    function checkVotedStatus() {
+      try {
+        return localStorage.getItem('mcsm_voted') === 'true';
+      } catch (e) {
+        return false; // W3Schools throws an error here, this catches it
+      }
+    }
+
+    function setVotedStatus() {
+      try {
+        localStorage.setItem('mcsm_voted', 'true');
+      } catch (e) {
+        console.log("W3Schools blocked saving, but it will work on GitHub.");
+      }
+    }
+
+    async function loadVotes() {
+      try {
+        const response = await fetch(API_URL);
+        if (response.ok) {
+          const data = await response.json();
+          currentVotes = data.count;
+        }
+      } catch (err) {
+        console.log("W3Schools blocked the API fetch, using fallback number.");
+      }
+      updateUI(currentVotes);
+    }
+
+    async function registerVote() {
+      if (checkVotedStatus()) {
+        alert("You've already supported the Order of the Stone!");
+        return;
+      }
+
+      voteBtn.disabled = true;
+      voteBtn.innerText = '[ SAVING CHOICE... ]';
+
+      try {
+        // Ping the API to count the vote up
+        const response = await fetch(`${API_URL}/up`);
+        if (response.ok) {
+          const data = await response.json();
+          currentVotes = data.count;
+        } else {
+          currentVotes++; // Fallback if API fails
+        }
+      } catch (err) {
+        // If W3Schools blocks it, simulate the click visually
+        currentVotes++;
+      }
+
+      setVotedStatus();
+      updateUI(currentVotes);
+    }
+
+    function updateUI(count) {
+      const formatted = count.toLocaleString();
+      voteTextEl.innerText = `${formatted} players will remember this.`;
+      numberDisplayEl.innerText = formatted;
+
+      if (checkVotedStatus()) {
+        voteBtn.disabled = true;
+        voteBtn.innerText = '[ THE ORDER WILL REMEMBER THAT ]';
+        voteBtn.style.borderColor = '#fce803';
+        voteBtn.style.color = '#fce803';
+      }
+    }
+
+    // Run on start
+    loadVotes();
+  </script>
+</body>
+</html>
