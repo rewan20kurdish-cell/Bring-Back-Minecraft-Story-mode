@@ -31,7 +31,6 @@
       padding: 20px;
     }
 
-    /* --- MCSM Header --- */
     .mcsm-header {
       width: 100%;
       max-width: 900px;
@@ -66,13 +65,11 @@
       color: #55ff55;
     }
 
-    /* --- Container --- */
     .container {
       max-width: 900px;
       width: 100%;
     }
 
-    /* --- Hero Image --- */
     .hero-image {
       width: 100%;
       height: 380px;
@@ -83,7 +80,6 @@
       margin-bottom: 25px;
     }
 
-    /* --- Vote Section --- */
     .vote-section {
       background: rgba(0, 0, 0, 0.8);
       border: 4px solid #8b8b8b;
@@ -181,7 +177,43 @@
       color: #ff5555;
     }
 
-    /* --- Gallery --- */
+    .info-box {
+      background: rgba(0, 0, 0, 0.8);
+      border: 4px solid #8b8b8b;
+      padding: 30px;
+      margin-bottom: 25px;
+      text-align: left;
+    }
+
+    .info-box h3 {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.8rem;
+      color: #ffff55;
+      margin-bottom: 15px;
+      text-shadow: 2px 2px 0 #3f3f3f;
+    }
+
+    .info-box p {
+      color: #cccccc;
+      line-height: 1.8;
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .info-box p:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-box .highlight {
+      color: #55ff55;
+      font-weight: 600;
+    }
+
+    .info-box .highlight-yellow {
+      color: #ffff55;
+      font-weight: 600;
+    }
+
     .gallery {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -208,7 +240,6 @@
       display: block;
     }
 
-    /* --- Footer --- */
     .footer {
       margin-top: 30px;
       padding: 20px;
@@ -224,7 +255,6 @@
       letter-spacing: 1px;
     }
 
-    /* --- Responsive --- */
     @media (max-width: 768px) {
       .hero-image {
         height: 220px;
@@ -255,6 +285,10 @@
         font-size: 0.55rem;
         padding: 5px 10px;
       }
+
+      .info-box p {
+        font-size: 0.9rem;
+      }
     }
 
     @media (max-width: 480px) {
@@ -270,12 +304,15 @@
         font-size: 0.65rem;
         padding: 14px 15px;
       }
+
+      .info-box p {
+        font-size: 0.8rem;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- MCSM Header -->
   <div class="mcsm-header">
     <div class="title">BRING BACK MCSM</div>
     <div class="votes">SUPPORTERS: <span id="headerVotes">...</span></div>
@@ -283,13 +320,11 @@
 
   <div class="container">
 
-    <!-- Hero Image -->
     <img class="hero-image" 
          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS9i7v8LrosnCQsrNgknWv440-id56oomDWyx8fvYWzig&s=10" 
          alt="Minecraft Story Mode"
          onerror="this.style.display='none'">
 
-    <!-- Vote Section -->
     <div class="vote-section">
       <h2>THE ORDER NEEDS YOU</h2>
       
@@ -306,7 +341,35 @@
       <div class="vote-status" id="voteStatus">Click to support the Order of the Stone</div>
     </div>
 
-    <!-- Gallery -->
+    <div class="info-box">
+      <h3>WHY YOUR VOTE MATTERS</h3>
+      <p>
+        Minecraft Story Mode was more than just a game. It was a journey filled with friendship, 
+        tough choices, and unforgettable moments with Jesse and the Order of the Stone. 
+        For many of us, it was the first time we truly felt like heroes in the world of Minecraft.
+      </p>
+      <p>
+        When Telltale Games shut down, the future of Minecraft Story Mode became uncertain. 
+        But the story never really ended. The passion from the community has only grown stronger 
+        over the years, with fans creating art, sharing memories, and keeping the spirit of 
+        the Order alive.
+      </p>
+      <p>
+        By reaching <span class="highlight">100,000 supporters</span>, we can send a powerful message 
+        to <span class="highlight-yellow">Telltale Games</span> and <span class="highlight-yellow">Mojang</span> 
+        that the demand for Minecraft Story Mode is still here. This isn't just about bringing 
+        back a game. It's about showing them that the stories we experienced together matter, 
+        and that there are still thousands of players who would love to see Jesse and the gang 
+        return for one more adventure.
+      </p>
+      <p>
+        Every single vote brings us closer to that goal. The Order of the Stone stood together 
+        against the Wither Storm, against the Admin, and against impossible odds. Now we need 
+        to stand together again. This is our chance to make our voices heard and prove that 
+        the legacy of Minecraft Story Mode deserves to continue.
+      </p>
+    </div>
+
     <div class="gallery">
       <div class="gallery-card">
         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT6I9P1tl5RxJIVQ7CrMddlT_cRyIOQ0wVIvHQyJKqrwg&s=10" 
@@ -327,7 +390,6 @@
       </div>
     </div>
 
-    <!-- Footer -->
     <div class="footer">
       <p>MINECRAFT STORY MODE - THE ORDER OF THE STONE</p>
     </div>
@@ -335,14 +397,12 @@
   </div>
 
   <script>
-    // --- GLOBAL VOTE SYSTEM - CLOUD ONLY ---
+    // --- WORKING VOTE SYSTEM USING COUNTAPI ---
+    // CountAPI is free, open-source, no sign-up required
+    // Source: https://countapi.xyz/
     
-    // Primary API: CounterAPI (free, reliable)
-    const COUNTER_API = 'https://api.counterapi.dev/v1/mcsm_campaign/votes';
-    
-    // Backup API: CountAPI
-    const BACKUP_API = 'https://api.countapi.xyz/hit/mcsm_campaign/votes';
-    
+    const API_URL = 'https://api.countapi.xyz/update/mcsm_campaign/supporters/?amount=1';
+    const GET_URL = 'https://api.countapi.xyz/get/mcsm_campaign/supporters';
     const VOTED_KEY = 'mcsm_user_voted';
     
     let currentVotes = 0;
@@ -368,24 +428,10 @@
       } catch {}
     }
 
-    // Load votes from cloud API
+    // Load votes from API
     async function loadVotes() {
       try {
-        // Try primary API first
-        const response = await fetch(COUNTER_API);
-        if (response.ok) {
-          const data = await response.json();
-          currentVotes = data.count;
-          updateUI(currentVotes);
-          return;
-        }
-      } catch (e) {
-        console.log('Primary API failed, trying backup...');
-      }
-
-      // Try backup API
-      try {
-        const response = await fetch(BACKUP_API);
+        const response = await fetch(GET_URL);
         if (response.ok) {
           const data = await response.json();
           currentVotes = data.value || 14300;
@@ -393,22 +439,19 @@
           return;
         }
       } catch (e) {
-        console.log('Backup API failed');
+        console.log('Failed to load votes, retrying...');
       }
 
-      // If both APIs fail, show error
-      voteStatus.textContent = 'UNABLE TO LOAD VOTES - PLEASE REFRESH';
-      voteStatus.className = 'vote-status error';
-      voteNumber.textContent = '???';
-      headerVotes.textContent = '???';
+      // If fails, try again after 2 seconds
+      setTimeout(loadVotes, 2000);
     }
 
-    // Register vote using cloud API
+    // Register vote
     async function registerVote() {
       if (isVoting) return;
       
       if (hasUserVoted()) {
-        voteStatus.textContent = 'YOU HAVE ALREADY SUPPORTED THE ORDER';
+        voteStatus.textContent = 'You have already supported the Order';
         voteStatus.className = 'vote-status warning';
         return;
       }
@@ -416,58 +459,54 @@
       isVoting = true;
       voteBtn.disabled = true;
       voteBtn.textContent = 'SAVING...';
-      voteStatus.textContent = 'RECORDING YOUR SUPPORT...';
+      voteStatus.textContent = 'Recording your support...';
       voteStatus.className = 'vote-status';
 
-      let success = false;
-      let apiUsed = '';
-
-      // Try primary API
       try {
-        const response = await fetch(`${COUNTER_API}/up`, { method: 'POST' });
+        // Increment the counter
+        const response = await fetch(API_URL);
+        
         if (response.ok) {
           const data = await response.json();
-          currentVotes = data.count;
-          success = true;
-          apiUsed = 'CounterAPI';
+          currentVotes = data.value;
+          
+          setUserVoted();
+          updateUI(currentVotes);
+          
+          voteBtn.textContent = 'THE ORDER REMEMBERS';
+          voteBtn.disabled = true;
+          voteStatus.textContent = 'Your support has been recorded';
+          voteStatus.className = 'vote-status success';
+        } else {
+          throw new Error('API returned error');
         }
       } catch (e) {
-        console.log('Primary API vote failed, trying backup...');
-      }
-
-      // If primary failed, try backup API
-      if (!success) {
+        console.error('Vote failed:', e);
+        
+        // Try alternative endpoint
         try {
-          const response = await fetch(BACKUP_API, { method: 'POST' });
-          if (response.ok) {
-            const data = await response.json();
-            currentVotes = data.value || currentVotes + 1;
-            success = true;
-            apiUsed = 'CountAPI';
+          const altResponse = await fetch('https://api.countapi.xyz/hit/mcsm_campaign/supporters');
+          if (altResponse.ok) {
+            const data = await altResponse.json();
+            currentVotes = data.value;
+            setUserVoted();
+            updateUI(currentVotes);
+            voteBtn.textContent = 'THE ORDER REMEMBERS';
+            voteBtn.disabled = true;
+            voteStatus.textContent = 'Your support has been recorded';
+            voteStatus.className = 'vote-status success';
+            isVoting = false;
+            return;
           }
-        } catch (e) {
-          console.log('Backup API vote failed');
+        } catch (altError) {
+          console.log('Alternative method also failed');
         }
-      }
-
-      // If both APIs fail
-      if (!success) {
+        
         voteBtn.disabled = false;
         voteBtn.textContent = 'BRING BACK STORY MODE';
-        voteStatus.textContent = 'VOTE FAILED - PLEASE TRY AGAIN LATER';
+        voteStatus.textContent = 'Connection issue - please try again';
         voteStatus.className = 'vote-status error';
-        isVoting = false;
-        return;
       }
-
-      // Vote successful
-      setUserVoted();
-      updateUI(currentVotes);
-      
-      voteBtn.textContent = 'THE ORDER REMEMBERS';
-      voteBtn.disabled = true;
-      voteStatus.textContent = 'YOUR SUPPORT HAS BEEN RECORDED';
-      voteStatus.className = 'vote-status success';
       
       isVoting = false;
     }
@@ -483,38 +522,28 @@
       if (hasUserVoted()) {
         voteBtn.textContent = 'THE ORDER REMEMBERS';
         voteBtn.disabled = true;
-        voteStatus.textContent = 'YOU HAVE ALREADY SUPPORTED THE ORDER';
+        voteStatus.textContent = 'You have already supported the Order';
         voteStatus.className = 'vote-status success';
       }
     }
 
-    // Auto-refresh votes from cloud
+    // Auto-refresh votes every 15 seconds
     let refreshInterval;
 
     function startAutoRefresh() {
       refreshInterval = setInterval(async () => {
         try {
-          const response = await fetch(COUNTER_API);
+          const response = await fetch(GET_URL);
           if (response.ok) {
             const data = await response.json();
-            currentVotes = data.count;
+            currentVotes = data.value;
             updateUI(currentVotes);
           }
-        } catch (e) {
-          // Try backup
-          try {
-            const response = await fetch(BACKUP_API);
-            if (response.ok) {
-              const data = await response.json();
-              currentVotes = data.value || currentVotes;
-              updateUI(currentVotes);
-            }
-          } catch (e) {}
-        }
+        } catch (e) {}
       }, 15000);
     }
 
-    // Init
+    // Initialize
     document.addEventListener('DOMContentLoaded', async function() {
       await loadVotes();
       startAutoRefresh();
@@ -526,9 +555,9 @@
       }
     });
 
-    console.log('MCSM CAMPAIGN - CLOUD VOTE SYSTEM ACTIVE');
+    console.log('MCSM Campaign Active');
+    console.log('Using CountAPI for reliable vote storage');
     console.log('Votes are saved in the cloud for everyone to see');
-    console.log('Help us reach 100,000 and bring back MCSM');
   </script>
 </body>
 </html>
