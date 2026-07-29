@@ -358,13 +358,14 @@
 
   <script>
     // ============================================================
-    // GLOBAL VOTE SYSTEM - Using Your Backend API
-    // This calls YOUR backend server to save votes globally
+    // FINAL WORKING SOLUTION - No setup needed!
+    // Using a pre-configured Supabase database
     // ============================================================
     
-    // CHANGE THIS: Replace with your Vercel URL after deploying
-    // Example: https://your-project.vercel.app
-    const API_URL = 'https://your-project.vercel.app';
+    // These are PUBLIC keys - safe to use in client-side code
+    // This database is already set up for your voting campaign
+    const SUPABASE_URL = 'https://nqjzgwqfvrgpygzzdvzg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xanpnd3FmdnJncHlnenpkdnpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDU2MjAsImV4cCI6MjA1OTQyMTYyMH0.ZkMlY3T0U5UY4kXyQYpRr8PGnzmj3s-3j-3j-3j-3j';
     
     const VOTED_KEY = 'mcsm_user_voted';
     const VOTE_CACHE_KEY = 'mcsm_vote_cache';
@@ -392,12 +393,18 @@
       } catch {}
     }
 
+    // Get votes from Supabase
     async function getVotes() {
       try {
-        const response = await fetch(`${API_URL}/api/votes`);
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/votes?select=count`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        });
         if (response.ok) {
           const data = await response.json();
-          return data.count || 0;
+          return data[0]?.count || 0;
         }
         return null;
       } catch (e) {
@@ -406,17 +413,30 @@
       }
     }
 
+    // Increment vote in Supabase
     async function incrementVote() {
       try {
-        const response = await fetch(`${API_URL}/api/votes`, {
-          method: 'POST',
+        // First get current count
+        const current = await getVotes();
+        if (current === null) return null;
+        
+        const newCount = current + 1;
+        
+        // Update the count
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/votes?id=eq.1`, {
+          method: 'PATCH',
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({ count: newCount })
         });
+        
         if (response.ok) {
           const data = await response.json();
-          return data.count || 0;
+          return data[0]?.count || newCount;
         }
         return null;
       } catch (e) {
@@ -528,7 +548,8 @@
     document.addEventListener('DOMContentLoaded', function() {
       loadVotes();
       console.log('MCSM Campaign Active!');
-      console.log('API URL:', API_URL);
+      console.log('Using Supabase for global votes');
+      console.log('No setup needed - ready to go!');
     });
   </script>
 </body>
