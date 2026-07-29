@@ -359,20 +359,21 @@
 
   <script>
     // ============================================================
-    // WORKING VOTE SYSTEM - Using tick.rs
-    // tick.rs is a simple, free, open-source counting service
-    // No sign-up, no API keys, just works
-    // Source: https://github.com/keithamus/tickrs
+    // GLOBAL VOTE SYSTEM - No sign-up required!
+    // Using countapi.xyz - free, reliable, no account needed
     // ============================================================
     
-    const TICKRS_API = 'https://tick.rs';
-    const COUNTER_ID = 'mcsm_supporters';
+    // Unique namespace for your counter - change this to something unique
+    // This prevents conflicts with other people using the same service
+    const COUNTER_NAMESPACE = 'mcsm_campaign_2026';
+    const COUNTER_KEY = 'supporters';
     
     const VOTED_KEY = 'mcsm_user_voted';
     const VOTE_CACHE_KEY = 'mcsm_vote_cache';
     
     let currentVotes = 14300;
     let isVoting = false;
+    let usingCloud = true;
     
     const voteNumber = document.getElementById('voteNumber');
     const headerVotes = document.getElementById('headerVotes');
@@ -394,50 +395,117 @@
       } catch {}
     }
 
-    // Get current vote count from tick.rs
+    // ============================================================
+    // COUNTAPI.XYZ - Free, global counting service
+    // No account needed! Just works out of the box.
+    // ============================================================
+    
+    async function getVotesFromCloud() {
+      try {
+        // Get current count
+        const response = await fetch(`https://api.countapi.xyz/get/${COUNTER_NAMESPACE}/${COUNTER_KEY}`);
+        if (response.ok) {
+          const data = await response.json();
+          return data.value || 0;
+        }
+        return null;
+      } catch (e) {
+        console.log('Cloud get error:', e);
+        return null;
+      }
+    }
+
+    async function incrementVoteInCloud() {
+      try {
+        // Increment the counter
+        const response = await fetch(`https://api.countapi.xyz/hit/${COUNTER_NAMESPACE}/${COUNTER_KEY}`);
+        if (response.ok) {
+          const data = await response.json();
+          usingCloud = true;
+          return data.value || 0;
+        }
+        return null;
+      } catch (e) {
+        console.log('Cloud increment error:', e);
+        return null;
+      }
+    }
+
+    // Reset counter (optional - for testing only)
+    async function resetCounter() {
+      try {
+        // Only use this for testing - comment out in production!
+        // const response = await fetch(`https://api.countapi.xyz/set/${COUNTER_NAMESPACE}/${COUNTER_KEY}?value=14300`);
+        // return response.ok;
+        return false;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // ============================================================
+    // MAIN FUNCTIONS
+    // ============================================================
+
     async function getVotes() {
-      try {
-        const response = await fetch(`${TICKRS_API}/get/${COUNTER_ID}`);
-        if (response.ok) {
-          const data = await response.json();
-          return data.count || 0;
-        }
-        return null;
-      } catch (e) {
-        console.log('Error getting votes:', e);
-        return null;
+      // Try cloud first
+      const cloudVotes = await getVotesFromCloud();
+      if (cloudVotes !== null && cloudVotes > 0) {
+        return cloudVotes;
       }
+      
+      // If cloud fails, use cached or default
+      try {
+        const cached = localStorage.getItem(VOTE_CACHE_KEY);
+        if (cached) {
+          return parseInt(cached);
+        }
+      } catch (e) {}
+      
+      return 14300; // Default starting value
     }
 
-    // Increment vote count using tick.rs
     async function incrementVote() {
+      // Try cloud first
+      const cloudResult = await incrementVoteInCloud();
+      if (cloudResult !== null && cloudResult > 0) {
+        return cloudResult;
+      }
+      
+      // If cloud fails, use local fallback
       try {
-        const response = await fetch(`${TICKRS_API}/inc/${COUNTER_ID}`);
-        if (response.ok) {
-          const data = await response.json();
-          return data.count || 0;
-        }
-        return null;
+        const current = parseInt(localStorage.getItem(VOTE_CACHE_KEY) || '14300');
+        const newCount = current + 1;
+        localStorage.setItem(VOTE_CACHE_KEY, newCount.toString());
+        usingCloud = false;
+        return newCount;
       } catch (e) {
-        console.log('Error incrementing vote:', e);
         return null;
       }
     }
 
-    // Load votes from API
+    // Load votes
     async function loadVotes() {
       try {
         const count = await getVotes();
-        if (count !== null && count > 0) {
+        if (count > 0) {
           currentVotes = count;
           updateUI(currentVotes);
           try {
             localStorage.setItem(VOTE_CACHE_KEY, currentVotes.toString());
           } catch (e) {}
+          
+          if (usingCloud) {
+            voteStatus.textContent = '🌐 Global votes - every supporter counts!';
+            voteStatus.className = 'vote-status success';
+          } else {
+            voteStatus.textContent = '📶 Offline mode - votes saved locally';
+            voteStatus.className = 'vote-status warning';
+          }
           return;
         }
       } catch (e) {
-        console.log('Load failed');
+        console.log('Load failed:', e);
       }
 
       // Check cache
@@ -446,7 +514,7 @@
         if (cached) {
           currentVotes = parseInt(cached);
           updateUI(currentVotes);
-          voteStatus.textContent = 'Using cached votes - API may be slow';
+          voteStatus.textContent = '📶 Using cached votes';
           voteStatus.className = 'vote-status warning';
           return;
         }
@@ -455,6 +523,8 @@
       // Default fallback
       currentVotes = 14300;
       updateUI(currentVotes);
+      voteStatus.textContent = '📶 Starting fresh - be the first supporter!';
+      voteStatus.className = 'vote-status warning';
     }
 
     // Register vote
@@ -462,15 +532,15 @@
       if (isVoting) return;
       
       if (hasUserVoted()) {
-        voteStatus.textContent = 'You have already supported the Order';
+        voteStatus.textContent = '⛔ You have already supported the Order';
         voteStatus.className = 'vote-status warning';
         return;
       }
 
       isVoting = true;
       voteBtn.disabled = true;
-      voteBtn.textContent = 'SAVING...';
-      voteStatus.textContent = 'Recording your support...';
+      voteBtn.textContent = '⏳ SAVING...';
+      voteStatus.textContent = '📤 Recording your support...';
       voteStatus.className = 'vote-status';
 
       try {
@@ -484,19 +554,42 @@
           setUserVoted();
           updateUI(currentVotes);
           
-          voteBtn.textContent = 'THE ORDER REMEMBERS';
+          voteBtn.textContent = '✅ THE ORDER REMEMBERS';
           voteBtn.disabled = true;
-          voteStatus.textContent = 'Your support has been recorded';
-          voteStatus.className = 'vote-status success';
+          
+          if (usingCloud) {
+            voteStatus.textContent = '✅ Your support is now part of the global count!';
+            voteStatus.className = 'vote-status success';
+          } else {
+            voteStatus.textContent = '✅ Support saved locally (offline mode)';
+            voteStatus.className = 'vote-status warning';
+          }
         } else {
           throw new Error('Increment failed');
         }
       } catch (e) {
         console.error('Vote error:', e);
-        voteBtn.disabled = false;
-        voteBtn.textContent = 'BRING BACK STORY MODE';
-        voteStatus.textContent = 'Connection issue - please try again';
-        voteStatus.className = 'vote-status error';
+        
+        // Try local fallback as last resort
+        try {
+          const current = parseInt(localStorage.getItem(VOTE_CACHE_KEY) || '14300');
+          const newCount = current + 1;
+          localStorage.setItem(VOTE_CACHE_KEY, newCount.toString());
+          currentVotes = newCount;
+          setUserVoted();
+          updateUI(currentVotes);
+          
+          voteBtn.textContent = '✅ THE ORDER REMEMBERS';
+          voteBtn.disabled = true;
+          voteStatus.textContent = '✅ Vote saved locally (cloud unavailable)';
+          voteStatus.className = 'vote-status warning';
+        } catch (fallbackError) {
+          console.error('Fallback also failed:', fallbackError);
+          voteBtn.disabled = false;
+          voteBtn.textContent = '🔄 TRY AGAIN';
+          voteStatus.textContent = '❌ Connection issue - please try again';
+          voteStatus.className = 'vote-status error';
+        }
       }
       
       isVoting = false;
@@ -511,26 +604,27 @@
       progressFill.style.width = percentage + '%';
       
       if (hasUserVoted()) {
-        voteBtn.textContent = 'THE ORDER REMEMBERS';
+        voteBtn.textContent = '✅ THE ORDER REMEMBERS';
         voteBtn.disabled = true;
-        voteStatus.textContent = 'You have already supported the Order';
-        voteStatus.className = 'vote-status success';
       }
     }
 
-    // Auto-refresh every 15 seconds
+    // Auto-refresh every 10 seconds
     let refreshInterval;
 
     function startAutoRefresh() {
       refreshInterval = setInterval(async () => {
         try {
-          const count = await getVotes();
+          const count = await getVotesFromCloud();
           if (count !== null && count > 0 && count !== currentVotes) {
             currentVotes = count;
             updateUI(currentVotes);
+            try {
+              localStorage.setItem(VOTE_CACHE_KEY, currentVotes.toString());
+            } catch (e) {}
           }
         } catch (e) {}
-      }, 15000);
+      }, 10000);
     }
 
     // Initialize
@@ -545,9 +639,10 @@
       }
     });
 
-    console.log('MCSM Campaign Active');
-    console.log('Using tick.rs for vote storage');
-    console.log('Votes are saved in the cloud for everyone to see');
+    console.log('🎮 MCSM Campaign Active!');
+    console.log('📊 Using countapi.xyz for global votes');
+    console.log('🌐 Votes are shared globally - no sign-up needed!');
+    console.log(`🔑 Counter: ${COUNTER_NAMESPACE}/${COUNTER_KEY}`);
   </script>
 </body>
 </html>
