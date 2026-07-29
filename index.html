@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bring Back MCSM!</title>
 
-  <!-- Minecraft Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -255,18 +254,6 @@
       letter-spacing: 1px;
     }
 
-    .counter-badge {
-      margin-top: 15px;
-      display: inline-block;
-    }
-
-    .counter-badge img {
-      border: 2px solid #555;
-      border-radius: 4px;
-      background: rgba(0,0,0,0.5);
-      padding: 5px 10px;
-    }
-
     @media (max-width: 768px) {
       .hero-image { height: 220px; }
       .vote-section h2 { font-size: 0.9rem; }
@@ -365,28 +352,25 @@
 
     <div class="footer">
       <p>MINECRAFT STORY MODE - THE ORDER OF THE STONE</p>
-      <div class="counter-badge">
-        <a href="https://librecounter.org/referer/show" target="_blank">
-          <img src="https://librecounter.org/counter.svg" referrerpolicy="unsafe-url" alt="LibreCounter" />
-        </a>
-      </div>
     </div>
 
   </div>
 
   <script>
     // ============================================================
-    // GLOBAL VOTE SYSTEM - Using LibreCounter
-    // No sign-up, no API keys, works with GitHub Pages
-    // LibreCounter automatically detects your site URL
+    // GLOBAL VOTE SYSTEM - Using Your Backend API
+    // This calls YOUR backend server to save votes globally
     // ============================================================
+    
+    // CHANGE THIS: Replace with your Vercel URL after deploying
+    // Example: https://your-project.vercel.app
+    const API_URL = 'https://your-project.vercel.app';
     
     const VOTED_KEY = 'mcsm_user_voted';
     const VOTE_CACHE_KEY = 'mcsm_vote_cache';
     
     let currentVotes = 0;
     let isVoting = false;
-    let isConnected = false;
     
     const voteNumber = document.getElementById('voteNumber');
     const headerVotes = document.getElementById('headerVotes');
@@ -408,97 +392,68 @@
       } catch {}
     }
 
-    // ============================================================
-    // LIBRECOUNTER - Automatically uses your GitHub Pages URL
-    // No configuration needed!
-    // ============================================================
-    
-    async function incrementVoteInCloud() {
-      try {
-        // LibreCounter automatically detects the site from the request
-        // We just need to call the /count endpoint
-        const response = await fetch('https://librecounter.org/count', {
-          method: 'GET',
-          headers: {
-            'Accept': 'image/svg+xml'
-          }
-        });
-        
-        if (response.ok) {
-          isConnected = true;
-          return true;
-        }
-        return false;
-      } catch (e) {
-        console.log('Connection error:', e);
-        isConnected = false;
-        return false;
-      }
-    }
-
-    // ============================================================
-    // MAIN FUNCTIONS
-    // ============================================================
-
     async function getVotes() {
       try {
-        const cached = localStorage.getItem(VOTE_CACHE_KEY);
-        if (cached) {
-          return parseInt(cached);
+        const response = await fetch(`${API_URL}/api/votes`);
+        if (response.ok) {
+          const data = await response.json();
+          return data.count || 0;
         }
-      } catch (e) {}
-      return 0;
+        return null;
+      } catch (e) {
+        console.log('Error getting votes:', e);
+        return null;
+      }
     }
 
     async function incrementVote() {
-      // Try LibreCounter first
-      const cloudResult = await incrementVoteInCloud();
-      
-      // Get current count from cache and increment
-      const current = parseInt(localStorage.getItem(VOTE_CACHE_KEY) || '0');
-      const newCount = current + 1;
-      localStorage.setItem(VOTE_CACHE_KEY, newCount.toString());
-      
-      if (cloudResult) {
-        return newCount;
+      try {
+        const response = await fetch(`${API_URL}/api/votes`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          return data.count || 0;
+        }
+        return null;
+      } catch (e) {
+        console.log('Error incrementing vote:', e);
+        return null;
       }
-      
-      return newCount;
     }
 
     async function loadVotes() {
       try {
         const count = await getVotes();
-        if (count >= 0) {
+        if (count !== null && count >= 0) {
           currentVotes = count;
           updateUI(currentVotes);
-          
-          // Check if LibreCounter is accessible
-          try {
-            const test = await fetch('https://librecounter.org/counter.svg', {
-              headers: { 'Accept': 'image/svg+xml' }
-            });
-            if (test.ok) {
-              isConnected = true;
-              voteStatus.textContent = 'Global votes - connected to LibreCounter';
-              voteStatus.className = 'vote-status success';
-            } else {
-              voteStatus.textContent = 'Using cached votes';
-              voteStatus.className = 'vote-status warning';
-            }
-          } catch (e) {
-            voteStatus.textContent = 'Using cached votes';
-            voteStatus.className = 'vote-status warning';
-          }
+          voteStatus.textContent = 'Global votes - connected!';
+          voteStatus.className = 'vote-status success';
           return;
         }
       } catch (e) {
         console.log('Load failed:', e);
       }
 
+      // Fallback to cache
+      try {
+        const cached = localStorage.getItem(VOTE_CACHE_KEY);
+        if (cached) {
+          currentVotes = parseInt(cached);
+          updateUI(currentVotes);
+          voteStatus.textContent = 'Using cached votes';
+          voteStatus.className = 'vote-status warning';
+          return;
+        }
+      } catch (e) {}
+
       currentVotes = 0;
       updateUI(currentVotes);
-      voteStatus.textContent = 'Be the first supporter!';
+      voteStatus.textContent = 'Click to be the first supporter!';
       voteStatus.className = 'vote-status warning';
     }
 
@@ -527,14 +482,8 @@
           
           voteBtn.textContent = 'THE ORDER REMEMBERS';
           voteBtn.disabled = true;
-          
-          if (isConnected) {
-            voteStatus.textContent = 'Your support is now part of the global count!';
-            voteStatus.className = 'vote-status success';
-          } else {
-            voteStatus.textContent = 'Support saved! (Using local cache)';
-            voteStatus.className = 'vote-status warning';
-          }
+          voteStatus.textContent = 'Your support is now part of the global count!';
+          voteStatus.className = 'vote-status success';
         } else {
           throw new Error('Increment failed');
         }
@@ -563,31 +512,24 @@
       }
     }
 
-    // Initialize
-    document.addEventListener('DOMContentLoaded', async function() {
-      await loadVotes();
-      
-      // Try to reconnect every 30 seconds
-      setInterval(async () => {
-        if (!isConnected) {
-          try {
-            const test = await fetch('https://librecounter.org/counter.svg', {
-              headers: { 'Accept': 'image/svg+xml' }
-            });
-            if (test.ok) {
-              isConnected = true;
-              voteStatus.textContent = 'Global votes - connected to LibreCounter';
-              voteStatus.className = 'vote-status success';
-            }
-          } catch (e) {}
+    // Auto-refresh every 5 seconds
+    setInterval(async () => {
+      try {
+        const count = await getVotes();
+        if (count !== null && count >= 0 && count !== currentVotes) {
+          currentVotes = count;
+          updateUI(currentVotes);
+          localStorage.setItem(VOTE_CACHE_KEY, count.toString());
         }
-      }, 30000);
-    });
+      } catch (e) {}
+    }, 5000);
 
-    console.log('MCSM Campaign Active!');
-    console.log('Using LibreCounter for global votes');
-    console.log('No sign-up needed - works with GitHub Pages!');
-    console.log('Your site URL: ' + window.location.href);
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      loadVotes();
+      console.log('MCSM Campaign Active!');
+      console.log('API URL:', API_URL);
+    });
   </script>
 </body>
 </html>
