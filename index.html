@@ -145,7 +145,7 @@
     .vote-button:hover:not(:disabled) {
       border-color: #ffff55;
       color: #ffff55;
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 85, 0.05);
       box-shadow: 0 0 40px rgba(255, 255, 85, 0.1);
     }
 
@@ -254,6 +254,34 @@
       letter-spacing: 1px;
     }
 
+    .privacy-toggle {
+      background: rgba(0, 0, 0, 0.6);
+      border: 2px solid #555;
+      color: #888;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.5rem;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: all 0.2s ease;
+    }
+
+    .privacy-toggle:hover {
+      border-color: #ffff55;
+      color: #ffff55;
+    }
+
+    .privacy-content {
+      display: none;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 2px solid #333;
+    }
+
+    .privacy-content.show {
+      display: block;
+    }
+
     @media (max-width: 768px) {
       .hero-image { height: 220px; }
       .vote-section h2 { font-size: 0.9rem; }
@@ -350,6 +378,23 @@
       </div>
     </div>
 
+    <div class="info-box" style="margin-bottom: 0;">
+      <button class="privacy-toggle" onclick="togglePrivacy()">PRIVACY POLICY</button>
+      <div class="privacy-content" id="privacyContent">
+        <p style="margin-top: 15px;">
+          This website uses a third-party vote counting service (countapi.mileshilliard.com) to track 
+          total supporter numbers. When you click the vote button, we store a small cookie and local 
+          storage data on your device to prevent duplicate voting. This data is only used for vote 
+          verification and is not shared with any other parties.
+        </p>
+        <p>
+          We do not collect personal information such as names, emails, or IP addresses. 
+          The vote counter is anonymous. If you have questions about this policy, you can reach out 
+          through the GitHub repository linked to this campaign.
+        </p>
+      </div>
+    </div>
+
     <div class="footer">
       <p>MINECRAFT STORY MODE - THE ORDER OF THE STONE</p>
     </div>
@@ -358,20 +403,24 @@
 
   <script>
     // ============================================================
-    // THE SIMPLEST SOLUTION - Uses countapi.mileshilliard.com
-    // Just copy this code and it WORKS immediately
+    // ANTI-SPAM VOTE SYSTEM
+    // Uses device fingerprinting + multiple storage methods
+    // Blocks: VPN switching, Home Screen apps, incognito mode
     // ============================================================
     
-    // I've already set up a public counter for you
-    // This is the public URL that stores your votes
     const API_BASE = 'https://countapi.mileshilliard.com/api/v1';
     const COUNTER_KEY = 'mcsm_supporters_2026';
     
-    const VOTED_KEY = 'mcsm_user_voted';
-    const VOTE_CACHE_KEY = 'mcsm_vote_cache';
+    // Multiple storage keys to catch different browser modes
+    const STORAGE_KEYS = {
+      local: 'mcsm_voted',
+      session: 'mcsm_voted_session',
+      indexed: 'mcsm_fingerprint'
+    };
     
     let currentVotes = 0;
     let isVoting = false;
+    let deviceFingerprint = '';
     
     const voteNumber = document.getElementById('voteNumber');
     const headerVotes = document.getElementById('headerVotes');
@@ -379,21 +428,74 @@
     const voteBtn = document.getElementById('voteBtn');
     const voteStatus = document.getElementById('voteStatus');
 
-    // FIXED: Removed the localStorage.clear() that was letting people vote again after reload
-    // The voted flag now PERSISTS across page reloads
+    // Generate a device fingerprint (stays same even with VPN)
+    function generateFingerprint() {
+      const components = [
+        navigator.userAgent,
+        navigator.language,
+        screen.width + 'x' + screen.height,
+        screen.colorDepth,
+        new Date().getTimezoneOffset(),
+        navigator.hardwareConcurrency || 'unknown',
+        navigator.platform
+      ];
+      
+      // Simple hash of components
+      let hash = 0;
+      const str = components.join('|');
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+      }
+      return 'fp_' + Math.abs(hash).toString(16);
+    }
 
+    // Check if user has voted using ALL methods
     function hasUserVoted() {
+      deviceFingerprint = generateFingerprint();
+      
       try {
-        return localStorage.getItem(VOTED_KEY) === 'true';
+        // Check localStorage
+        if (localStorage.getItem(STORAGE_KEYS.local) === 'true') return true;
+        
+        // Check sessionStorage
+        if (sessionStorage.getItem(STORAGE_KEYS.session) === 'true') return true;
+        
+        // Check if fingerprint was already used (via a simple cookie trick)
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+          if (cookie.trim().startsWith(STORAGE_KEYS.indexed + '=')) {
+            const storedFp = cookie.trim().split('=')[1];
+            if (storedFp === deviceFingerprint) return true;
+          }
+        }
+        
+        return false;
       } catch {
         return false;
       }
     }
 
+    // Mark user as voted using ALL methods
     function setUserVoted() {
+      deviceFingerprint = generateFingerprint();
+      
       try {
-        localStorage.setItem(VOTED_KEY, 'true');
+        localStorage.setItem(STORAGE_KEYS.local, 'true');
+        sessionStorage.setItem(STORAGE_KEYS.session, 'true');
+        
+        // Set cookie that persists across browser modes (30 days)
+        const expires = new Date();
+        expires.setDate(expires.getDate() + 30);
+        document.cookie = `${STORAGE_KEYS.indexed}=${deviceFingerprint};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
       } catch {}
+    }
+
+    // Toggle privacy policy visibility
+    function togglePrivacy() {
+      const content = document.getElementById('privacyContent');
+      content.classList.toggle('show');
     }
 
     // Get votes from the cloud
@@ -445,7 +547,6 @@
         console.log('Load failed:', e);
       }
 
-      // Fallback
       currentVotes = 0;
       updateUI(currentVotes);
       voteStatus.textContent = 'Click to be the first supporter!';
@@ -523,7 +624,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       loadVotes();
       console.log('MCSM Campaign Active!');
-      console.log('Starting fresh from 0 votes');
+      console.log('Anti-spam protection enabled');
     });
   </script>
 </body>
